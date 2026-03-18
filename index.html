@@ -239,8 +239,8 @@
     </div>
     <canvas id="c2"></canvas>
     <div class="panel-footer" id="f2">
+      <span class="stat">comparisons: <span class="stat-val" id="cmp2">0</span></span>
       <span class="stat">phase: <span class="stat-val" id="phase2-val">—</span></span>
-      <span class="stat">strip pts: <span class="stat-val" id="strip2">—</span></span>
       <span class="phase-label" id="done2"></span>
     </div>
   </div>
@@ -359,16 +359,19 @@ function buildDCEvents(pts) {
 
   events.push({ type: 'sort', msg: 'Pre-sort Px and Py  O(n log n)' });
 
+  let total_dc_comps = 0;
+
   function rec(sub_px, sub_py, depth) {
     const n = sub_px.length;
     if (n <= 3) {
       let dm = Infinity, ri = -1, rj = -1;
       for (let a = 0; a < n - 1; a++)
         for (let b = a + 1; b < n; b++) {
+          total_dc_comps++;
           const d = dist(sub_px[a], sub_px[b]);
           if (d < dm) { dm = d; ri = sub_px[a].idx; rj = sub_px[b].idx; }
         }
-      events.push({ type: 'base', idxs: sub_px.map(p=>p.idx), ri, rj, dm, depth, msg: `Base case  |P|=${n}` });
+      events.push({ type: 'base', idxs: sub_px.map(p=>p.idx), ri, rj, dm, depth, comps: total_dc_comps, msg: `Base case  |P|=${n}` });
       return { i: ri, j: rj, d: dm };
     }
 
@@ -383,6 +386,7 @@ function buildDCEvents(pts) {
     events.push({
       type: 'divide', depth, x_star,
       left: qx.map(p=>p.idx), right: rx.map(p=>p.idx),
+      comps: total_dc_comps,
       msg: `Divide  depth=${depth}  left=${qx.length} pts`
     });
 
@@ -398,6 +402,7 @@ function buildDCEvents(pts) {
       type: 'combine', depth, x_star, delta,
       strip: strip_pts.map(p=>p.idx),
       bi: best.i, bj: best.j, bd: best.d,
+      comps: total_dc_comps,
       msg: `Combine  δ=${delta.toFixed(3)}  strip=${strip_pts.length} pts`
     });
 
@@ -406,6 +411,7 @@ function buildDCEvents(pts) {
     let strip_d = Infinity, si = -1, sj = -1;
     for (let a = 0; a < sy.length; a++)
       for (let b = a + 1; b < Math.min(a + 16, sy.length); b++) {
+        total_dc_comps++;
         const d = dist(sy[a], sy[b]);
         if (d < strip_d) { strip_d = d; si = sy[a].idx; sj = sy[b].idx; }
       }
@@ -418,6 +424,7 @@ function buildDCEvents(pts) {
       type: 'strip_result', depth, x_star, delta,
       strip: strip_pts.map(p=>p.idx),
       fi: final_i, fj: final_j, fd: final_d,
+      comps: total_dc_comps,
       msg: `Strip check → closest in strip`
     });
 
@@ -426,7 +433,7 @@ function buildDCEvents(pts) {
 
   rec(px, py, 0);
   const last = events[events.length - 1];
-  events.push({ type: 'done', fi: last.fi, fj: last.fj, fd: last.fd, msg: 'Done!' });
+  events.push({ type: 'done', fi: last.fi, fj: last.fj, fd: last.fd, comps: total_dc_comps, msg: 'Done!' });
   return events;
 }
 
@@ -535,7 +542,7 @@ function drawDC(ev) {
 
   // Draw ALL divide lines seen so far -- accumulated from events 0..dc_frame
   // Deeper levels get more faded so the structure is clear
-  const seen_dividers = new Map(); // x_star -> min depth seen
+  const seen_dividers = new Map();
   for (let k = 0; k <= dc_frame && k < dc_events.length; k++) {
     const e = dc_events[k];
     if (e.x_star !== undefined && e.depth !== undefined) {
@@ -545,9 +552,9 @@ function drawDC(ev) {
     }
   }
   seen_dividers.forEach((depth, x_star_val) => {
-    const lx = x_to_cx(x_star_val);
-    const opacity = Math.max(0.15, 0.6 - depth * 0.15);
-    const lineW   = Math.max(0.5, 1.5 - depth * 0.3);
+    const lx      = x_to_cx(x_star_val);
+    const opacity = Math.max(0.12, 0.7 - depth * 0.12);
+    const lineW   = Math.max(0.4, 1.5 - depth * 0.25);
     g.beginPath(); g.moveTo(lx, MARGIN); g.lineTo(lx, h - MARGIN);
     g.strokeStyle = `rgba(79,195,247,${opacity})`;
     g.lineWidth = lineW; g.setLineDash([4, 4]); g.stroke(); g.setLineDash([]);
@@ -604,9 +611,9 @@ function drawDC(ev) {
   g.restore();
 
   // Footer
+  document.getElementById('cmp2').textContent = ev.comps || 0;
+  document.getElementById('cmp2').className = 'stat-val' + (ev.type === 'done' ? ' done' : '');
   document.getElementById('phase2-val').textContent = ev.msg || '—';
-  document.getElementById('strip2').textContent =
-    ev.strip ? ev.strip.length : '—';
   document.getElementById('done2').textContent =
     ev.type === 'done' ? '✓ complete' : `event ${dc_frame+1} / ${dc_events.length}`;
 }
