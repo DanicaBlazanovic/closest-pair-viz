@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Closest Pair of Points — Algorithm Visualization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #7d8590;
+    --alg1:      #ff6b6b;
+    --alg1-dim:  #3d1a1a;
+    --alg2:      #4fc3f7;
+    --alg2-dim:  #0d2a36;
+    --best:      #56d364;
+    --final:     #f78166;
+    --strip:     rgba(79,195,247,0.08);
+    --divider:   rgba(79,195,247,0.5);
+    --comparing: #ffa657;
+    --accent:    #58a6ff;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    max-width: 1100px;
+    margin: 0 auto 1.5rem;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .panel-title.alg1 { color: var(--alg1); }
+  .panel-title.alg2 { color: var(--alg2); }
+
+  .complexity {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 340px;
+    cursor: default;
+  }
+
+  .panel-footer {
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    min-height: 2.4rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .stat { display: flex; align-items: center; gap: 0.4rem; }
+  .stat-val { color: var(--text); font-weight: 600; }
+  .stat-val.done { color: var(--best); }
+
+  .controls {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  button:hover { background: var(--border); }
+
+  button.primary {
+    background: var(--accent);
+    color: #0d1117;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  button.primary:hover { background: #79c0ff; }
+
+  .speed-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .legend {
+    max-width: 1100px;
+    margin: 1rem auto 0;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .phase-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: auto;
+  }
+
+  @media (max-width: 680px) {
+    .panels { grid-template-columns: 1fr; }
+    .controls { gap: 0.6rem; }
+    .speed-wrap { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Closest Pair of Points — Algorithm Visualization</h1>
+  <p>COT 6405 Analysis of Algorithms &nbsp;·&nbsp; Danica Blazanovic &nbsp;·&nbsp; Florida Atlantic University</p>
+</header>
+
+<div class="panels">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title alg1">ALG 1 — Brute-Force</span>
+      <span class="complexity">Θ(n²)</span>
+    </div>
+    <canvas id="c1"></canvas>
+    <div class="panel-footer" id="f1">
+      <span class="stat">comparisons: <span class="stat-val" id="cmp1">0</span></span>
+      <span class="stat">best dist: <span class="stat-val" id="dist1">—</span></span>
+      <span class="phase-label" id="phase1"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title alg2">ALG 2 — Divide-and-Conquer</span>
+      <span class="complexity">Θ(n log n)</span>
+    </div>
+    <canvas id="c2"></canvas>
+    <div class="panel-footer" id="f2">
+      <span class="stat">phase: <span class="stat-val" id="phase2-val">—</span></span>
+      <span class="stat">strip pts: <span class="stat-val" id="strip2">—</span></span>
+      <span class="phase-label" id="done2"></span>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="primary" id="btn-play">⏸ Pause</button>
+  <button id="btn-reset">↺ New Points</button>
+  <button id="btn-step">Step →</button>
+  <div class="speed-wrap">
+    <span>Speed</span>
+    <input type="range" id="speed" min="1" max="10" value="5">
+    <span id="speed-val">5</span>
+  </div>
+</div>
+
+<div class="legend">
+  <span class="legend-item"><span class="dot" style="background:#7d8590"></span>point</span>
+  <span class="legend-item"><span class="dot" style="background:#ffa657"></span>comparing (ALG1)</span>
+  <span class="legend-item"><span class="dot" style="background:#56d364"></span>best so far</span>
+  <span class="legend-item"><span class="dot" style="background:#f78166"></span>final answer</span>
+  <span class="legend-item"><span class="dot" style="background:#4fc3f7"></span>divide line / strip (ALG2)</span>
+</div>
+
+<script>
+// ─── Config ────────────────────────────────────────────────────────────────
+const N       = 22;
+const MARGIN  = 28;
+const R       = 5;
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let pts = [];
+let bf_steps = [];
+let dc_events = [];
+let bf_frame  = 0;
+let dc_frame  = 0;
+let playing   = true;
+let speed     = 5;
+let raf_id    = null;
+let last_tick = 0;
+
+// ─── Canvas setup ──────────────────────────────────────────────────────────
+const C1 = document.getElementById('c1');
+const C2 = document.getElementById('c2');
+const G1 = C1.getContext('2d');
+const G2 = C2.getContext('2d');
+
+function resize() {
+  [C1, C2].forEach(c => {
+    c.width  = c.offsetWidth  * devicePixelRatio;
+    c.height = c.offsetHeight * devicePixelRatio;
+  });
+}
+resize();
+window.addEventListener('resize', () => { resize(); draw(); });
+
+function W(c) { return c.width  / devicePixelRatio; }
+function H(c) { return c.height / devicePixelRatio; }
+
+// ─── Point generation ──────────────────────────────────────────────────────
+function seededRand(seed) {
+  let s = seed;
+  return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+}
+
+function generatePoints(seed) {
+  const rand = seededRand(seed);
+  const arr  = [];
+  const seen = new Set();
+  while (arr.length < N) {
+    const x = Math.round(rand() * 10000) / 100;
+    const y = Math.round(rand() * 10000) / 100;
+    const k = `${x},${y}`;
+    if (!seen.has(k)) { seen.add(k); arr.push({x, y}); }
+  }
+  return arr;
+}
+
+function toCanvas(p, c) {
+  const w = W(c) - MARGIN * 2;
+  const h = H(c) - MARGIN * 2;
+  return {
+    cx: MARGIN + p.x / 100 * w,
+    cy: MARGIN + (1 - p.y / 100) * h
+  };
+}
+
+function dist(a, b) {
+  return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2);
+}
+
+// ─── ALG1: Brute-Force steps ───────────────────────────────────────────────
+function buildBFSteps(pts) {
+  const steps = [];
+  const n = pts.length;
+  let dmin = Infinity, bi = -1, bj = -1;
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const d = dist(pts[i], pts[j]);
+      const better = d < dmin;
+      if (better) { dmin = d; bi = i; bj = j; }
+      steps.push({ i, j, better, bi, bj, dmin, done: false });
+    }
+  }
+  steps.push({ done: true, bi, bj, dmin });
+  return steps;
+}
+
+// ─── ALG2: D&C events ──────────────────────────────────────────────────────
+function buildDCEvents(pts) {
+  const events = [];
+  const n = pts.length;
+  const indexed = pts.map((p, i) => ({...p, idx: i}));
+  const px = [...indexed].sort((a,b) => a.x - b.x);
+  const py = [...indexed].sort((a,b) => a.y - b.y);
+
+  events.push({ type: 'sort', msg: 'Pre-sort Px and Py  O(n log n)' });
+
+  function rec(sub_px, sub_py, depth) {
+    const n = sub_px.length;
+    if (n <= 3) {
+      let dm = Infinity, ri = -1, rj = -1;
+      for (let a = 0; a < n - 1; a++)
+        for (let b = a + 1; b < n; b++) {
+          const d = dist(sub_px[a], sub_px[b]);
+          if (d < dm) { dm = d; ri = sub_px[a].idx; rj = sub_px[b].idx; }
+        }
+      events.push({ type: 'base', idxs: sub_px.map(p=>p.idx), ri, rj, dm, depth, msg: `Base case  |P|=${n}` });
+      return { i: ri, j: rj, d: dm };
+    }
+
+    const mid    = Math.ceil(n / 2);
+    const qx     = sub_px.slice(0, mid);
+    const rx     = sub_px.slice(mid);
+    const q_set  = new Set(qx.map(p=>p.idx));
+    const qy     = sub_py.filter(p => q_set.has(p.idx));
+    const ry     = sub_py.filter(p => !q_set.has(p.idx));
+    const x_star = qx[qx.length - 1].x;
+
+    events.push({
+      type: 'divide', depth, x_star,
+      left: qx.map(p=>p.idx), right: rx.map(p=>p.idx),
+      msg: `Divide  depth=${depth}  left=${qx.length} pts`
+    });
+
+    const q_res = rec(qx, qy, depth + 1);
+    const r_res = rec(rx, ry, depth + 1);
+
+    const delta = Math.min(q_res.d, r_res.d);
+    const best  = q_res.d <= r_res.d ? q_res : r_res;
+
+    const strip_pts = sub_px.filter(p => Math.abs(p.x - x_star) <= delta);
+
+    events.push({
+      type: 'combine', depth, x_star, delta,
+      strip: strip_pts.map(p=>p.idx),
+      bi: best.i, bj: best.j, bd: best.d,
+      msg: `Combine  δ=${delta.toFixed(3)}  strip=${strip_pts.length} pts`
+    });
+
+    // Strip check
+    const sy = [...strip_pts].sort((a,b) => a.y - b.y);
+    let strip_d = Infinity, si = -1, sj = -1;
+    for (let a = 0; a < sy.length; a++)
+      for (let b = a + 1; b < Math.min(a + 16, sy.length); b++) {
+        const d = dist(sy[a], sy[b]);
+        if (d < strip_d) { strip_d = d; si = sy[a].idx; sj = sy[b].idx; }
+      }
+
+    const final_i = strip_d < delta ? si : best.i;
+    const final_j = strip_d < delta ? sj : best.j;
+    const final_d = Math.min(strip_d, delta);
+
+    events.push({
+      type: 'strip_result', depth, x_star, delta,
+      strip: strip_pts.map(p=>p.idx),
+      fi: final_i, fj: final_j, fd: final_d,
+      msg: `Strip check → closest in strip`
+    });
+
+    return { i: final_i, j: final_j, d: final_d };
+  }
+
+  rec(px, py, 0);
+  const last = events[events.length - 1];
+  events.push({ type: 'done', fi: last.fi, fj: last.fj, fd: last.fd, msg: 'Done!' });
+  return events;
+}
+
+// ─── Drawing: ALG1 ─────────────────────────────────────────────────────────
+function drawBF(step) {
+  const g = G1, c = C1;
+  const dpr = devicePixelRatio;
+  g.clearRect(0, 0, c.width, c.height);
+  g.save(); g.scale(dpr, dpr);
+
+  const w = W(c), h = H(c);
+
+  // Background
+  g.fillStyle = '#0d1117';
+  g.fillRect(0, 0, w, h);
+
+  if (!step) { g.restore(); return; }
+
+  // Best line so far
+  if (step.bi >= 0 && !step.done) {
+    const a = toCanvas(pts[step.bi], c);
+    const b = toCanvas(pts[step.bj], c);
+    g.beginPath(); g.moveTo(a.cx, a.cy); g.lineTo(b.cx, b.cy);
+    g.strokeStyle = '#56d364'; g.lineWidth = 1.5; g.setLineDash([]); g.stroke();
+  }
+
+  // Current comparison line
+  if (!step.done) {
+    const a = toCanvas(pts[step.i], c);
+    const b = toCanvas(pts[step.j], c);
+    g.beginPath(); g.moveTo(a.cx, a.cy); g.lineTo(b.cx, b.cy);
+    g.strokeStyle = 'rgba(255,166,87,0.35)';
+    g.lineWidth = 1; g.setLineDash([3, 3]); g.stroke();
+    g.setLineDash([]);
+  }
+
+  // Final answer line
+  if (step.done) {
+    const a = toCanvas(pts[step.bi], c);
+    const b = toCanvas(pts[step.bj], c);
+    g.beginPath(); g.moveTo(a.cx, a.cy); g.lineTo(b.cx, b.cy);
+    g.strokeStyle = '#f78166'; g.lineWidth = 2.5; g.stroke();
+  }
+
+  // Points
+  pts.forEach((p, idx) => {
+    const {cx, cy} = toCanvas(p, c);
+    let fill = '#4d5561';
+    if (step.done) {
+      fill = (idx === step.bi || idx === step.bj) ? '#f78166' : '#4d5561';
+    } else {
+      if (idx === step.bi || idx === step.bj) fill = '#56d364';
+      if (idx === step.i  || idx === step.j)  fill = '#ffa657';
+    }
+    g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2);
+    g.fillStyle = fill; g.fill();
+    // Index label
+    g.fillStyle = '#7d8590';
+    g.font = `${9 * 1}px JetBrains Mono, monospace`;
+    g.fillText(idx, cx + 6, cy - 4);
+  });
+
+  g.restore();
+
+  // Footer
+  const cmpEl   = document.getElementById('cmp1');
+  const distEl  = document.getElementById('dist1');
+  const phEl    = document.getElementById('phase1');
+  const total   = N * (N - 1) / 2;
+  cmpEl.textContent = step.done
+    ? total
+    : (bf_frame + 1);
+  cmpEl.className = 'stat-val' + (step.done ? ' done' : '');
+  distEl.textContent = step.dmin < Infinity
+    ? step.dmin.toFixed(4)
+    : '—';
+  phEl.textContent = step.done ? '✓ complete' : `${bf_frame+1} / ${total}`;
+}
+
+// ─── Drawing: ALG2 ─────────────────────────────────────────────────────────
+function drawDC(ev) {
+  const g = G2, c = C2;
+  const dpr = devicePixelRatio;
+  g.clearRect(0, 0, c.width, c.height);
+  g.save(); g.scale(dpr, dpr);
+
+  const w = W(c), h = H(c);
+
+  g.fillStyle = '#0d1117';
+  g.fillRect(0, 0, w, h);
+
+  if (!ev) { g.restore(); return; }
+
+  const x_to_cx = (xv) => {
+    const fw = w - MARGIN * 2;
+    return MARGIN + xv / 100 * fw;
+  };
+
+  // Strip shading
+  if ((ev.type === 'combine' || ev.type === 'strip_result') && ev.x_star !== undefined) {
+    const lx = x_to_cx(ev.x_star - ev.delta);
+    const rx = x_to_cx(ev.x_star + ev.delta);
+    g.fillStyle = 'rgba(79,195,247,0.07)';
+    g.fillRect(lx, 0, rx - lx, h);
+  }
+
+  // Divide line
+  if (ev.x_star !== undefined) {
+    const lx = x_to_cx(ev.x_star);
+    g.beginPath(); g.moveTo(lx, MARGIN); g.lineTo(lx, h - MARGIN);
+    g.strokeStyle = 'rgba(79,195,247,0.4)';
+    g.lineWidth = 1; g.setLineDash([4, 4]); g.stroke(); g.setLineDash([]);
+  }
+
+  // Final answer line
+  if (ev.type === 'done' && ev.fi >= 0) {
+    const a = toCanvas(pts[ev.fi], c);
+    const b = toCanvas(pts[ev.fj], c);
+    g.beginPath(); g.moveTo(a.cx, a.cy); g.lineTo(b.cx, b.cy);
+    g.strokeStyle = '#f78166'; g.lineWidth = 2.5; g.stroke();
+  }
+
+  if ((ev.type === 'combine' || ev.type === 'strip_result') && ev.bi >= 0) {
+    const a = toCanvas(pts[ev.bi], c);
+    const b = toCanvas(pts[ev.bj], c);
+    g.beginPath(); g.moveTo(a.cx, a.cy); g.lineTo(b.cx, b.cy);
+    g.strokeStyle = '#56d364'; g.lineWidth = 1.5; g.stroke();
+  }
+
+  // Points
+  const leftSet  = new Set(ev.left  || []);
+  const rightSet = new Set(ev.right || []);
+  const stripSet = new Set(ev.strip || []);
+
+  pts.forEach((p, idx) => {
+    const {cx, cy} = toCanvas(p, c);
+    let fill = '#4d5561';
+
+    if (ev.type === 'done') {
+      fill = (idx === ev.fi || idx === ev.fj) ? '#f78166' : '#4d5561';
+    } else if (ev.type === 'base') {
+      fill = ev.idxs.includes(idx)
+        ? (idx === ev.ri || idx === ev.rj ? '#56d364' : '#4fc3f7')
+        : '#2d3540';
+    } else if (ev.type === 'divide') {
+      if (leftSet.has(idx))  fill = 'rgba(79,195,247,0.7)';
+      else if (rightSet.has(idx)) fill = 'rgba(134,87,255,0.7)';
+      else fill = '#2d3540';
+    } else if (ev.type === 'combine' || ev.type === 'strip_result') {
+      if (idx === ev.bi || idx === ev.bj) fill = '#56d364';
+      else if (stripSet.has(idx)) fill = '#ffd54f';
+      else fill = '#2d3540';
+      if (ev.type === 'strip_result' && (idx === ev.fi || idx === ev.fj)) fill = '#f78166';
+    }
+
+    g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2);
+    g.fillStyle = fill; g.fill();
+    g.fillStyle = '#7d8590';
+    g.font = `${9}px JetBrains Mono, monospace`;
+    g.fillText(idx, cx + 6, cy - 4);
+  });
+
+  g.restore();
+
+  // Footer
+  document.getElementById('phase2-val').textContent = ev.msg || '—';
+  document.getElementById('strip2').textContent =
+    ev.strip ? ev.strip.length : '—';
+  document.getElementById('done2').textContent =
+    ev.type === 'done' ? '✓ complete' : `event ${dc_frame+1} / ${dc_events.length}`;
+}
+
+// ─── Animation loop ────────────────────────────────────────────────────────
+function draw() {
+  drawBF(bf_steps[bf_frame] || bf_steps[bf_steps.length - 1]);
+  drawDC(dc_events[dc_frame] || dc_events[dc_events.length - 1]);
+}
+
+function tick(ts) {
+  if (!playing) { raf_id = requestAnimationFrame(tick); return; }
+
+  const interval = 1000 / (speed * 3);   // ms between frames
+  if (ts - last_tick > interval) {
+    last_tick = ts;
+
+    const bf_done = bf_frame >= bf_steps.length - 1;
+    const dc_done = dc_frame >= dc_events.length - 1;
+
+    if (!bf_done) bf_frame++;
+    if (!dc_done) dc_frame++;
+
+    // Slow DC frames -- fewer events, show each longer
+    if (!dc_done && dc_frame < dc_events.length - 1) {
+      // DC advances every 3 BF frames at full speed
+    }
+
+    draw();
+  }
+  raf_id = requestAnimationFrame(tick);
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+function init(seed) {
+  pts       = generatePoints(seed || Math.floor(Math.random() * 99999));
+  bf_steps  = buildBFSteps(pts);
+  dc_events = buildDCEvents(pts);
+  bf_frame  = 0;
+  dc_frame  = 0;
+  draw();
+}
+
+// ─── Controls ──────────────────────────────────────────────────────────────
+document.getElementById('btn-play').addEventListener('click', () => {
+  playing = !playing;
+  document.getElementById('btn-play').textContent = playing ? '⏸ Pause' : '▶ Play';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  cancelAnimationFrame(raf_id);
+  playing = true;
+  document.getElementById('btn-play').textContent = '⏸ Pause';
+  init();
+  raf_id = requestAnimationFrame(tick);
+});
+
+document.getElementById('btn-step').addEventListener('click', () => {
+  playing = false;
+  document.getElementById('btn-play').textContent = '▶ Play';
+  if (bf_frame < bf_steps.length - 1) bf_frame++;
+  if (dc_frame < dc_events.length - 1) dc_frame++;
+  draw();
+});
+
+document.getElementById('speed').addEventListener('input', function() {
+  speed = +this.value;
+  document.getElementById('speed-val').textContent = speed;
+});
+
+// ─── Start ─────────────────────────────────────────────────────────────────
+init(42);
+raf_id = requestAnimationFrame(tick);
+</script>
+</body>
+</html>
