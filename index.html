@@ -533,13 +533,25 @@ function drawDC(ev) {
     g.fillRect(lx, 0, rx - lx, h);
   }
 
-  // Divide line
-  if (ev.x_star !== undefined) {
-    const lx = x_to_cx(ev.x_star);
-    g.beginPath(); g.moveTo(lx, MARGIN); g.lineTo(lx, h - MARGIN);
-    g.strokeStyle = 'rgba(79,195,247,0.4)';
-    g.lineWidth = 1; g.setLineDash([4, 4]); g.stroke(); g.setLineDash([]);
+  // Draw ALL divide lines seen so far -- accumulated from events 0..dc_frame
+  // Deeper levels get more faded so the structure is clear
+  const seen_dividers = new Map(); // x_star -> min depth seen
+  for (let k = 0; k <= dc_frame && k < dc_events.length; k++) {
+    const e = dc_events[k];
+    if (e.x_star !== undefined && e.depth !== undefined) {
+      if (!seen_dividers.has(e.x_star) || seen_dividers.get(e.x_star) > e.depth) {
+        seen_dividers.set(e.x_star, e.depth);
+      }
+    }
   }
+  seen_dividers.forEach((depth, x_star_val) => {
+    const lx = x_to_cx(x_star_val);
+    const opacity = Math.max(0.15, 0.6 - depth * 0.15);
+    const lineW   = Math.max(0.5, 1.5 - depth * 0.3);
+    g.beginPath(); g.moveTo(lx, MARGIN); g.lineTo(lx, h - MARGIN);
+    g.strokeStyle = `rgba(79,195,247,${opacity})`;
+    g.lineWidth = lineW; g.setLineDash([4, 4]); g.stroke(); g.setLineDash([]);
+  });
 
   // Final answer line
   if (ev.type === 'done' && ev.fi >= 0) {
