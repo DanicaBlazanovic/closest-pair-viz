@@ -240,7 +240,7 @@
     <canvas id="c2"></canvas>
     <div class="panel-footer" id="f2">
       <span class="stat">comparisons: <span class="stat-val" id="cmp2">0</span></span>
-      <span class="stat">phase: <span class="stat-val" id="phase2-val">—</span></span>
+      <span class="stat">best dist: <span class="stat-val" id="phase2-val">—</span></span>
       <span class="phase-label" id="done2"></span>
     </div>
   </div>
@@ -613,7 +613,9 @@ function drawDC(ev) {
   // Footer
   document.getElementById('cmp2').textContent = ev.comps || 0;
   document.getElementById('cmp2').className = 'stat-val' + (ev.type === 'done' ? ' done' : '');
-  document.getElementById('phase2-val').textContent = ev.msg || '—';
+  const bestDist2 = ev.fd ?? ev.bd ?? ev.dm;
+  document.getElementById('phase2-val').textContent = bestDist2 !== undefined && bestDist2 < Infinity
+    ? bestDist2.toFixed(4) : '—';
   document.getElementById('done2').textContent =
     ev.type === 'done' ? '✓ complete' : `event ${dc_frame+1} / ${dc_events.length}`;
 }
